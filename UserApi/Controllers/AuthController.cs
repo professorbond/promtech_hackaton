@@ -23,10 +23,13 @@ namespace UserApi.Controllers
                 .FirstOrDefaultAsync(u => u.Username == loginData.Username && u.Password == loginData.Password);
 
             if (user == null)
+            {
                 return Unauthorized(new { message = "Неверный логин или пароль" });
-
-            // Пока просто возвращаем роль, токен можно добавить потом
-            return Ok(new { user.Username, user.Role });
+            }
+            else
+            {
+                return Ok(new { user.Username, user.Role });
+            }
         }
 
         [HttpGet("users")]
@@ -34,6 +37,18 @@ namespace UserApi.Controllers
         {
             var users = await _context.Users.ToListAsync();
             return Ok(users);
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] User newUser)
+        {
+            if (await _context.Users.AnyAsync(u => u.Username == newUser.Username))
+                return BadRequest(new { message = "Пользователь с таким именем уже существует" });
+
+            _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { newUser.Username, newUser.Role });
         }
     }
 }
